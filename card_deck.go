@@ -1,29 +1,24 @@
+/*
+	Modeling for a standard deck of cards.
+
+	A deck contains a number of cards (identified by a character code).  Decks are created in a standard order, and can
+	be shuffled after creation.  They also know how many cards they have remaining, and if they are or are not shuffled.
+
+	A deck maintains the current state of an un-played deck, meaning that When you draw from a deck, the cards that are
+	returned are removed from the deck, and the remaining cards decrease appropriately.
+*/
+
 package toggleDecks
 
 import (
 	"math/rand"
+	"strings"
 	"time"
 )
 
-/*
-
- */
-
-var SUITES = [4]string{"S", "D", "C", "H"}
-var RANKS = [13]string{"A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"}
-
-func LegalCodes() (cards [52]string) {
-	idx := 0
-
-	for _, suite := range SUITES {
-		for _, rank := range RANKS {
-			cards[idx] = rank + suite
-			idx++
-		}
-	}
-
-	return
-}
+// The codes that represent a standard deck, in the initial order, which is by Ascending Rank with suits in the order
+// Spades, Diamonds, Clubs, Hearts.  This can be used to generate a standard "french" deck of cards.
+const STANDARD_DECK = "AS 2S 3S 4S 5S 6S 7S 8S 9S 10S JS QS KS AD 2D 3D 4D 5D 6D 7D 8D 9D 10D JD QD KD AC 2C 3C 4C 5C 6C 7C 8C 9C 10C JC QC KC AH 2H 3H 4H 5H 6H 7H 8H 9H 10H JH QH KH"
 
 type Card string
 
@@ -59,9 +54,17 @@ func (d *Deck) Shuffle() {
 	d.Shuffled = true
 }
 
-func CreateDeck() (cards Deck) {
-	cards = Deck{make([]Card, 52), false}
-	for idx, code := range LegalCodes() {
+// Create a standard 52 card "French" Deck of playing cards.
+func CreateFullDeck() Deck {
+	return CreateDeck(STANDARD_DECK)
+}
+
+// Create a new card deck containing the specified cards.
+// Does NOT check if the cards are "valid" card codes for any given type of deck, that should be done by the caller.
+func CreateDeck(includedCards string) (cards Deck) {
+	cardCodes := strings.Split(includedCards, " ")
+	cards = Deck{make([]Card, len(cardCodes)), false}
+	for idx, code := range cardCodes {
 		cards.Cards[idx] = Card(code)
 	}
 

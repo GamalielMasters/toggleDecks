@@ -71,6 +71,17 @@ func (d *Deck) Shuffle() {
 	d.Shuffled = true
 }
 
+func (d *Deck) Draw(number int) (cards []Card) {
+	if number > d.Len() {
+		number = d.Len()
+	}
+
+	cards = d.Cards[:number]
+	d.Cards = d.Cards[number:]
+
+	return
+}
+
 // Create a standard 52 card "French" Deck of playing cards.
 func CreateFullDeck() Deck {
 	return CreateDeck(STANDARD_DECK)

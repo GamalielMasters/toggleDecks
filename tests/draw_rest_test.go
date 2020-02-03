@@ -8,7 +8,7 @@ import (
 
 // Drawing from a deck returns just the cards as an array of card objects.  By default you get one card.
 func TestDrawOneCardFromADeck(t *testing.T) {
-	iid := app.NewDeck( "", false )
+	iid := app.NewDeck("", false)
 	actual, status := DoRequest(t, "POST", fmt.Sprintf("/api/v1/decks/%v/draw", iid))
 
 	if status != http.StatusOK {
@@ -23,8 +23,8 @@ func TestDrawOneCardFromADeck(t *testing.T) {
 
 // You can draw more cards by specifying the number in the cards parameter to the request.
 func TestDrawThreeCardsFromADeck(t *testing.T) {
-	iid := app.NewDeck( "", false )
-	actual, status := DoRequest(t, "POST", fmt.Sprintf("/api/v1/decks/%v/draw?cards=3", iid))
+	iid := app.NewDeck("", false)
+	actual, status := DoRequest(t, "POST", fmt.Sprintf("/api/v1/decks/%v/draw?count=3", iid))
 
 	if status != http.StatusOK {
 		t.Errorf("Recived wrong status code. Expected %v, got %v.", http.StatusOK, status)
@@ -38,8 +38,8 @@ func TestDrawThreeCardsFromADeck(t *testing.T) {
 
 // If you try to draw more cards then are left in the deck, you get whatever was left, not the number you asked for.
 func TestDrawTwoCardsFromADeckContainingOne(t *testing.T) {
-	iid := app.NewDeck( "AS", false )
-	actual, status := DoRequest(t, "POST", fmt.Sprintf("/api/v1/decks/%v/draw?cards=2", iid))
+	iid := app.NewDeck("AS", false)
+	actual, status := DoRequest(t, "POST", fmt.Sprintf("/api/v1/decks/%v/draw?count=2", iid))
 
 	if status != http.StatusOK {
 		t.Errorf("Recived wrong status code. Expected %v, got %v.", http.StatusOK, status)
@@ -53,14 +53,14 @@ func TestDrawTwoCardsFromADeckContainingOne(t *testing.T) {
 
 // Trying to draw from an exhausted deck gives you back an empty array... no cards at all.
 func TestDrawCardFromAnExhaustedDeck(t *testing.T) {
-	iid := app.NewDeck( "AS QH", false )
-	_, status := DoRequest(t, "POST", fmt.Sprintf("/api/v1/decks/%v/draw?cards=2", iid))
+	iid := app.NewDeck("AS QH", false)
+	_, status := DoRequest(t, "POST", fmt.Sprintf("/api/v1/decks/%v/draw?count=2", iid))
 
 	if status != http.StatusOK {
 		t.Errorf("Recived wrong status code. Expected %v, got %v.", http.StatusOK, status)
 	}
 
-	actual, status := DoRequest(t, "POST", fmt.Sprintf("/api/v1/decks/%v/draw?cards=1", iid))
+	actual, status := DoRequest(t, "POST", fmt.Sprintf("/api/v1/decks/%v/draw?count=1", iid))
 
 	if status != http.StatusOK {
 		t.Errorf("Recived wrong status code. Expected %v, got %v.", http.StatusOK, status)
@@ -74,8 +74,8 @@ func TestDrawCardFromAnExhaustedDeck(t *testing.T) {
 
 // If you provide anything but an integer for the number to draw, you get the default of one card.
 func TestDrawNaNCardsFromADeck(t *testing.T) {
-	iid := app.NewDeck( "", false )
-	actual, status := DoRequest(t, "POST", fmt.Sprintf("/api/v1/decks/%v/draw?cards=NaN", iid))
+	iid := app.NewDeck("", false)
+	actual, status := DoRequest(t, "POST", fmt.Sprintf("/api/v1/decks/%v/draw?count=NaN", iid))
 
 	if status != http.StatusOK {
 		t.Errorf("Recived wrong status code. Expected %v, got %v.", http.StatusOK, status)
@@ -89,7 +89,7 @@ func TestDrawNaNCardsFromADeck(t *testing.T) {
 
 // Trying to draw cards from an invalid deck id gives you a big fat 404, good buddy!
 func TestDrawCardsFromAnInvalidDeck(t *testing.T) {
-	_, status := DoRequest(t, "POST", "/api/v1/decks/INVALID_ID/draw?cards=1")
+	_, status := DoRequest(t, "POST", "/api/v1/decks/INVALID_ID/draw?count=1")
 
 	if status != http.StatusNotFound {
 		t.Errorf("Recived wrong status code. Expected %v, got %v.", http.StatusOK, status)

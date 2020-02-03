@@ -7,44 +7,6 @@ import (
 	"toggleDecks"
 )
 
-type GuidMock struct{}
-
-// Return the same guid every time for testing purposes.
-func (m GuidMock) GenerateIdentifier() string {
-	return "a251071b-662f-44b6-ba11-e24863039c59"
-}
-
-func PatchUID() {
-	toggleDecks.TheGuidProvider = GuidMock{}
-}
-
-func UnPatchUID() {
-	toggleDecks.TheGuidProvider = toggleDecks.GuidIdProvider{}
-}
-
-func ClearTheDatabase() {
-	toggleDecks.OurDecks = map[string]toggleDecks.Deck{}
-}
-
-func DoCreateRequest(t *testing.T, method string, url string) (body string, result int) {
-	ClearTheDatabase()
-	PatchUID()
-	defer UnPatchUID()
-
-	req, err := http.NewRequest(method, url, nil)
-
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	rr := httptest.NewRecorder()
-	toggleDecks.Router.ServeHTTP(rr, req)
-	result = rr.Code
-
-	body = rr.Body.String()
-	return
-}
-
 func TestCreateNewDefaultDeck(t *testing.T) {
 	actual, status := DoCreateRequest(t, "POST", "/api/v1/decks")
 
@@ -124,7 +86,7 @@ func TestCreateNewCustomShuffledDeck(t *testing.T) {
 	}
 }
 
-func TestCreateCustomDeckWithRepeatedCardsOk(t *testing.T) {
+func TestCreateCustomDeckWithRepeatedCards(t *testing.T) {
 	actual, status := DoCreateRequest(t, "POST", "/api/v1/decks?cards=AS,KD,AC,2C,KH,AS,KD,AC,2C,KH&shuffle=false")
 
 	if status != http.StatusOK {
@@ -163,7 +125,7 @@ func TestCreateCustomDeckWithInvalidCards(t *testing.T) {
 }
 
 func TestMultipleDecksGetDifferentIds(t *testing.T) {
-	// Cannot use DoCreateRequest here because it installs the GUID mock.
+	// Cannot use DoCreateRequest here because it installs the GUID mock, which defeats what we are testing here.
 	ClearTheDatabase()
 	req, err := http.NewRequest("POST", "/api/v1/decks", nil)
 
@@ -172,10 +134,9 @@ func TestMultipleDecksGetDifferentIds(t *testing.T) {
 	}
 
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(toggleDecks.DeckCreateEndpoint)
 
 	for i := 0; i < 3; i++ {
-		handler.ServeHTTP(rr, req)
+		toggleDecks.Router.ServeHTTP(rr, req)
 		if rr.Code != http.StatusOK {
 			t.Errorf("Recived wrong status code. Expected %v, got %v.", http.StatusOK, rr.Code)
 		}

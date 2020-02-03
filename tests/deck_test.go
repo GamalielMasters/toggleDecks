@@ -2,52 +2,9 @@ package tests
 
 import (
 	"reflect"
-	"sort"
-	"strings"
 	"testing"
 	"toggleDecks"
 )
-
-// Helper Functions
-
-func DeckToSSortedString(d toggleDecks.Deck) string {
-	return SortDeckString(d.String())
-}
-
-func SortDeckString(expected string) string {
-	sortedStrings := strings.Split(expected, " ")
-	sort.Strings(sortedStrings)
-	return strings.Join(sortedStrings, " ")
-}
-
-func DeckContainsCards(d toggleDecks.Deck, expected string) (bool, string, string) {
-	the_deck := DeckToSSortedString(d)
-	expected_deck := SortDeckString(expected)
-	return the_deck == expected_deck, expected_deck, the_deck
-}
-
-// Card Tests
-
-func TestCardKnowsItsRank(t *testing.T) {
-	card := toggleDecks.Card("AC")
-	card2 := toggleDecks.Card("10D")
-	if card.Rank() != "ACE" {
-		t.Errorf("Card reports wrong rank.  Expected 'ACE', got '%v'", card.Rank())
-	}
-
-	if card2.Rank() != "10" {
-		t.Errorf("Card reports wrong rank.  Expected '10', got '%v'", card2.Rank())
-	}
-}
-
-func TestCardKnowsItsSuite(t *testing.T) {
-	card := toggleDecks.Card("AC")
-	if card.Suite() != "CLUBS" {
-		t.Errorf("Card reports wrong suite. Expected 'CLUBS', got '%v'", card.Suite())
-	}
-}
-
-// Deck Tests
 
 func TestDefaultDeckIs52Cards(t *testing.T) {
 	deck := toggleDecks.CreateFullDeck()

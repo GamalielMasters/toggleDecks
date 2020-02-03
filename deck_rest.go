@@ -10,6 +10,17 @@ import (
 	"strings"
 )
 
+/*
+	Rest API for the card deck.  Relatively independent of the actual deck functionality.  This exposes the deck
+	as a rest API with the following endpoints.
+
+	/api/v1/decks 						-> POST -- Creates a new deck and returns its salient details.
+	/api/v1/decks						-> GET  -- Returns a list of decks currently in the system.
+	/api/v1/decks/{id)					-> GET  -- Opens a deck, providing its details and the remaining cards in the deck.
+	/api/v1/decks/{id}/draw?number=x	-> POST -- Draws x cards from the deck, returning them and removing them from the deck.
+
+*/
+
 var Router = mux.NewRouter()
 
 func init() {

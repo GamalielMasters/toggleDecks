@@ -6,6 +6,9 @@ import (
 	"testing"
 )
 
+// Test the Create Deck Endpoint.
+
+// A default deck is 52 un-shuffled cards
 func TestCreateNewDefaultDeck(t *testing.T) {
 	app.ClearTheDatabase()
 	actual, status := DoCreateRequest(t, "POST", "/api/v1/decks")
@@ -24,6 +27,7 @@ func TestCreateNewDefaultDeck(t *testing.T) {
 	}
 }
 
+// But you can request that it be shuffled if you like.
 func TestCreateNewShuffledDeck(t *testing.T) {
 	actual, status := DoCreateRequest(t, "POST", "/api/v1/decks?shuffle=true")
 
@@ -38,6 +42,7 @@ func TestCreateNewShuffledDeck(t *testing.T) {
 	}
 }
 
+// Or you can ask for it to contain only specific cards you select. You get a custom deck back in the order you provide the cards.
 func TestCreateNewCustomDeck(t *testing.T) {
 	actual, status := DoCreateRequest(t, "POST", "/api/v1/decks?cards=AS,KD,AC,2C,KH")
 	if status != http.StatusOK {
@@ -51,7 +56,7 @@ func TestCreateNewCustomDeck(t *testing.T) {
 	}
 
 	expectedDeck := "AS KD AC 2C KH"
-	generatedDeck, _ := app.GetDeck("a251071b-662f-44b6-ba11-e24863039c59" )
+	generatedDeck, _ := app.GetDeck("a251071b-662f-44b6-ba11-e24863039c59")
 	actualDeck := generatedDeck.String()
 
 	if actualDeck != expectedDeck {
@@ -59,6 +64,7 @@ func TestCreateNewCustomDeck(t *testing.T) {
 	}
 }
 
+// Unless you request that it be shuffled.
 func TestCreateNewCustomShuffledDeck(t *testing.T) {
 	actual, status := DoCreateRequest(t, "POST", "/api/v1/decks?cards=AS,KD,AC,2C,KH&shuffle=true")
 
@@ -85,6 +91,7 @@ func TestCreateNewCustomShuffledDeck(t *testing.T) {
 	}
 }
 
+// It's fine to ask for more then one of the same card in your custom deck.
 func TestCreateCustomDeckWithRepeatedCards(t *testing.T) {
 	actual, status := DoCreateRequest(t, "POST", "/api/v1/decks?cards=AS,KD,AC,2C,KH,AS,KD,AC,2C,KH&shuffle=false")
 
@@ -107,6 +114,7 @@ func TestCreateCustomDeckWithRepeatedCards(t *testing.T) {
 	}
 }
 
+// But you'll get an error if you ask for things that aren't valid cards in the normal 52 card deck.
 func TestCreateCustomDeckWithInvalidCards(t *testing.T) {
 	// Wrong Rank - 11 of Dimonds is not a legal card.
 	_, status := DoCreateRequest(t, "POST", "/api/v1/decks?cards=AS,KD,AC,2C, 11D")
@@ -123,6 +131,7 @@ func TestCreateCustomDeckWithInvalidCards(t *testing.T) {
 	}
 }
 
+// If you ask for more then one deck, each one gets a different ID.
 func TestMultipleDecksGetDifferentIds(t *testing.T) {
 	// Cannot use DoCreateRequest here because it installs the GUID mock, which defeats what we are testing here.
 	app.ClearTheDatabase()

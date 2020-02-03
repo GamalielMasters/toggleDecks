@@ -1,5 +1,11 @@
 /*
-	Main application of the toggleDecks server.  Initializes the database and router, and starts the server.
+	A card deck. Provides both a standard deck of 52 cards as well as custom decks made up of selected cards.
+	Exposes the deck as a rest API with the following endpoints.
+
+	/api/v1/decks 						-> POST -- Creates a new deck and returns its salient details.
+	/api/v1/decks						-> GET  -- Returns a list of decks currently in the system.
+	/api/v1/decks/{id)					-> GET  -- Opens a deck, providing its details and the remaining cards in the deck.
+	/api/v1/decks/{id}/draw?number=x	-> POST -- Draws x cards from the deck, returning them and removing them from the deck.
 */
 
 package toggleDecks
@@ -13,6 +19,7 @@ import (
 	"strings"
 )
 
+// Main application of the toggleDecks server.  Initializes the database and router, and optionally starts the server.
 type App struct {
 	Router *mux.Router
 
@@ -20,6 +27,7 @@ type App struct {
 	TheDecks map[string]*Deck
 }
 
+// Create and initialize a new app (and database and router)
 func NewApp() *App {
 	a := App{mux.NewRouter(), map[string]*Deck{}}
 	a.Router.HandleFunc("/api/v1/decks", a.DeckCreateEndpoint).Methods("POST")
@@ -29,6 +37,7 @@ func NewApp() *App {
 	return &a
 }
 
+// Run the server on the passed address.
 func (a *App) Run(addr string) {
 	log.Fatal(http.ListenAndServe(addr, a.Router))
 }
@@ -38,7 +47,7 @@ func (a *App) ClearTheDatabase() {
 	a.TheDecks = map[string]*Deck{}
 }
 
-// Create a custom test deck and file it the decks database.
+// Create a deck and file it the decks database.
 func (a *App) NewDeck(cards string, shuffle bool) (iid string) {
 	iid = TheGuidProvider.GenerateIdentifier()
 	var deck Deck
@@ -57,6 +66,7 @@ func (a *App) NewDeck(cards string, shuffle bool) (iid string) {
 	return
 }
 
+// Fetch a deck by it's ID.
 func (a *App) GetDeck(iid string) (deck *Deck, ok bool) {
 	deck, ok = a.TheDecks[iid]
 	return
@@ -64,6 +74,7 @@ func (a *App) GetDeck(iid string) (deck *Deck, ok bool) {
 
 // Retrieve a stored deck from our "database" based on the request parameter named "deckId".  If it doesn't work, write
 // and error and return done=true.  Otherwise, return the IID and the deck* to the retrieved deck.
+// This is meant to be called as a helper from REST endpoints, it is not an endpoint itself.
 func (a *App) getDeckFromRequest(w http.ResponseWriter, r *http.Request) (iid string, deck *Deck, err error) {
 	pathParams := mux.Vars(r)
 

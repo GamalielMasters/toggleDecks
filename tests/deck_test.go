@@ -1,11 +1,14 @@
 package tests
 
 import (
+	"github.com/GamalielMasters/toggleDecks"
 	"reflect"
 	"testing"
-	"github.com/GamalielMasters/toggleDecks"
 )
 
+// Test Underlying deck functionality.
+
+// By default a deck is 52 playing cards.
 func TestDefaultDeckIs52Cards(t *testing.T) {
 	deck := toggleDecks.CreateFullDeck()
 	if deck.Len() != 52 {
@@ -13,6 +16,7 @@ func TestDefaultDeckIs52Cards(t *testing.T) {
 	}
 }
 
+// And they are the standard cards you would expect.
 func TestDefaultDeckIsAFullDeck(t *testing.T) {
 	deck := toggleDecks.CreateFullDeck()
 	equal, sortedDeck, expected := DeckContainsCards(deck, toggleDecks.STANDARD_DECK)
@@ -21,6 +25,7 @@ func TestDefaultDeckIsAFullDeck(t *testing.T) {
 	}
 }
 
+// In the order that a new deck comes in.
 func TestDefaultDeckForCorrectOrder(t *testing.T) {
 	deck := toggleDecks.CreateFullDeck()
 	if deck.String() != toggleDecks.STANDARD_DECK {
@@ -28,6 +33,7 @@ func TestDefaultDeckForCorrectOrder(t *testing.T) {
 	}
 }
 
+// Unless you call Shuffle.
 func TestShuffledDeckIsNotInInitialOrder(t *testing.T) {
 	deck := toggleDecks.CreateFullDeck()
 	deck.Shuffle()
@@ -36,6 +42,7 @@ func TestShuffledDeckIsNotInInitialOrder(t *testing.T) {
 	}
 }
 
+// In which case, the deck remembers that it has been shuffled
 func TestDeckKnowsIfItHasBeenShuffled(t *testing.T) {
 	unshuffled_deck := toggleDecks.CreateFullDeck()
 	if unshuffled_deck.Shuffled {
@@ -49,6 +56,7 @@ func TestDeckKnowsIfItHasBeenShuffled(t *testing.T) {
 	}
 }
 
+// You can also create a partial deck with only the cards you want.
 func TestCanCreatePartialDeck(t *testing.T) {
 	deckDefinition := "AS KD AC 2C KH"
 	partialDeck := toggleDecks.CreateDeck(deckDefinition)
@@ -62,6 +70,7 @@ func TestCanCreatePartialDeck(t *testing.T) {
 	}
 }
 
+// Once you have a deck, you can draw cards.
 func TestCanDrawOneCardFromTheDeck(t *testing.T) {
 	deck := toggleDecks.CreateFullDeck()
 	cards := deck.Draw(1)
@@ -75,6 +84,7 @@ func TestCanDrawOneCardFromTheDeck(t *testing.T) {
 	}
 }
 
+// Even more then one at a time.
 func TestCanDrawMultipleCardsFromTheDeck(t *testing.T) {
 	deck := toggleDecks.CreateFullDeck()
 	cards := deck.Draw(5)
@@ -90,6 +100,7 @@ func TestCanDrawMultipleCardsFromTheDeck(t *testing.T) {
 	}
 }
 
+// Once you draw cards, the deck doesn't have them anymore.
 func TestDrawnCardsAreNoLongerInTheDeck(t *testing.T) {
 	deck := toggleDecks.CreateFullDeck()
 	deck.Draw(1)
@@ -99,6 +110,7 @@ func TestDrawnCardsAreNoLongerInTheDeck(t *testing.T) {
 	}
 }
 
+// Multiple draws return progressive cards.  No dealing from the bottom here.
 func TestMultipleDrawsTakeConsecutiveCards(t *testing.T) {
 	deck := toggleDecks.CreateFullDeck()
 	deck.Draw(15)
@@ -115,6 +127,18 @@ func TestMultipleDrawsTakeConsecutiveCards(t *testing.T) {
 
 }
 
+// If you try to draw more cards then are left in the deck, it won't complain, but you only get what's left.
+func TestCannotDrawMoreCardsThenAreLeftInTheDeck(t *testing.T) {
+	deck := toggleDecks.CreateFullDeck()
+	deck.Draw(50)
+	cards := deck.Draw(3)
+
+	if len(cards) != 2 {
+		t.Errorf("Should have gotten only 2 remaining cards, but got %v.", len(cards))
+	}
+}
+
+// Even if you've drawn all the cards.
 func TestCannotDrawCardsFromAnExhaustedDeck(t *testing.T) {
 	deck := toggleDecks.CreateFullDeck()
 	deck.Draw(52)
@@ -129,14 +153,4 @@ func TestCannotDrawCardsFromAnExhaustedDeck(t *testing.T) {
 		t.Errorf("Should have gotten an empty slice from drawing from an empty deck, but got %v", cards)
 	}
 
-}
-
-func TestCannotDrawMoreCardsThenAreLeftInTheDeck(t *testing.T) {
-	deck := toggleDecks.CreateFullDeck()
-	deck.Draw(50)
-	cards := deck.Draw(3)
-
-	if len(cards) != 2 {
-		t.Errorf("Should have gotten only 2 remaining cards, but got %v.", len(cards))
-	}
 }

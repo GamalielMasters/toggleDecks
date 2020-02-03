@@ -9,14 +9,7 @@ import (
 )
 
 /*
-	Rest API for the card deck.  Relatively independent of the actual deck functionality.  This exposes the deck
-	as a rest API with the following endpoints.
-
-	/api/v1/decks 						-> POST -- Creates a new deck and returns its salient details.
-	/api/v1/decks						-> GET  -- Returns a list of decks currently in the system.
-	/api/v1/decks/{id)					-> GET  -- Opens a deck, providing its details and the remaining cards in the deck.
-	/api/v1/decks/{id}/draw?number=x	-> POST -- Draws x cards from the deck, returning them and removing them from the deck.
-
+	Helper functions for implementing the RestAPI including the rest structures and handling functions.
 */
 
 // Interface to an ID provider for our api objects
@@ -43,13 +36,14 @@ type RestDeckMessage struct {
 	Cards     []RestCard `json:"cards,omitempty"`
 }
 
-func NewRestDeckMessage( iid string, deck *Deck, includeCards bool ) (rdm RestDeckMessage) {
+// Create a new RestDockMessage from the iid and *Deck.  It can include or exclude the actual cards.
+func NewRestDeckMessage(iid string, deck *Deck, includeCards bool) (rdm RestDeckMessage) {
 	remaining := deck.Len()
 	shuffled := deck.Shuffled
 
 	var cards []RestCard
 	if includeCards {
-		cards = NewRestDrawMessage( deck.Cards ).Cards
+		cards = NewRestDrawMessage(deck.Cards).Cards
 	} else {
 		cards = []RestCard{}
 	}
@@ -74,9 +68,8 @@ func NewRestDrawMessage(cards []Card) RestDrawMessage {
 	for i, c := range cards {
 		restCards[i] = RestCard{c.Rank(), c.Suite(), c.Code()}
 	}
-	return RestDrawMessage{ restCards }
+	return RestDrawMessage{restCards}
 }
-
 
 // Indicate success and write json data.
 func WriteSuccess(w http.ResponseWriter, rm interface{}) {
@@ -87,7 +80,8 @@ func WriteSuccess(w http.ResponseWriter, rm interface{}) {
 	}
 }
 
-func WriteError( w http.ResponseWriter, errorCode int, message string) {
+// Indicate a error and write an error message.
+func WriteError(w http.ResponseWriter, errorCode int, message string) {
 	w.WriteHeader(errorCode)
 	_, _ = fmt.Fprint(w, message)
 

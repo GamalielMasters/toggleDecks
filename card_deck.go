@@ -55,7 +55,7 @@ type Deck struct {
 }
 
 // The number of cards left in the deck.
-func (d Deck) Len() int {
+func (d *Deck) Len() int {
 	return len(d.Cards)
 }
 

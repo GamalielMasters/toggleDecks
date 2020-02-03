@@ -4,10 +4,10 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"toggleDecks"
 )
 
 func TestCreateNewDefaultDeck(t *testing.T) {
+	app.ClearTheDatabase()
 	actual, status := DoCreateRequest(t, "POST", "/api/v1/decks")
 
 	if status != http.StatusOK {
@@ -19,7 +19,7 @@ func TestCreateNewDefaultDeck(t *testing.T) {
 		t.Errorf("Wrong result returned.\n\tExpected : %v\n\tGot      : %v", expected, actual)
 	}
 
-	if len(toggleDecks.OurDecks) != 1 {
+	if len(app.TheDecks) != 1 {
 		t.Error("Deck was not entered in internal map.")
 	}
 }
@@ -40,7 +40,6 @@ func TestCreateNewShuffledDeck(t *testing.T) {
 
 func TestCreateNewCustomDeck(t *testing.T) {
 	actual, status := DoCreateRequest(t, "POST", "/api/v1/decks?cards=AS,KD,AC,2C,KH")
-
 	if status != http.StatusOK {
 		t.Errorf("Recived wrong status code. Expected %v, got %v.", http.StatusOK, status)
 	}
@@ -52,7 +51,7 @@ func TestCreateNewCustomDeck(t *testing.T) {
 	}
 
 	expectedDeck := "AS KD AC 2C KH"
-	generatedDeck := toggleDecks.OurDecks["a251071b-662f-44b6-ba11-e24863039c59"]
+	generatedDeck, _ := app.GetDeck("a251071b-662f-44b6-ba11-e24863039c59" )
 	actualDeck := generatedDeck.String()
 
 	if actualDeck != expectedDeck {
@@ -74,7 +73,7 @@ func TestCreateNewCustomShuffledDeck(t *testing.T) {
 	}
 
 	expectedDeck := "AS KD AC 2C KH"
-	generatedDeck := toggleDecks.OurDecks["a251071b-662f-44b6-ba11-e24863039c59"]
+	generatedDeck := app.TheDecks["a251071b-662f-44b6-ba11-e24863039c59"]
 	actualDeck := generatedDeck.String()
 
 	if actualDeck == expectedDeck {
@@ -100,7 +99,7 @@ func TestCreateCustomDeckWithRepeatedCards(t *testing.T) {
 	}
 
 	expectedDeck := "AS KD AC 2C KH AS KD AC 2C KH"
-	generatedDeck := toggleDecks.OurDecks["a251071b-662f-44b6-ba11-e24863039c59"]
+	generatedDeck := app.TheDecks["a251071b-662f-44b6-ba11-e24863039c59"]
 	actualDeck := generatedDeck.String()
 
 	if actualDeck != expectedDeck {
@@ -126,7 +125,7 @@ func TestCreateCustomDeckWithInvalidCards(t *testing.T) {
 
 func TestMultipleDecksGetDifferentIds(t *testing.T) {
 	// Cannot use DoCreateRequest here because it installs the GUID mock, which defeats what we are testing here.
-	ClearTheDatabase()
+	app.ClearTheDatabase()
 	req, err := http.NewRequest("POST", "/api/v1/decks", nil)
 
 	if err != nil {
@@ -136,13 +135,13 @@ func TestMultipleDecksGetDifferentIds(t *testing.T) {
 	rr := httptest.NewRecorder()
 
 	for i := 0; i < 3; i++ {
-		toggleDecks.Router.ServeHTTP(rr, req)
+		app.Router.ServeHTTP(rr, req)
 		if rr.Code != http.StatusOK {
 			t.Errorf("Recived wrong status code. Expected %v, got %v.", http.StatusOK, rr.Code)
 		}
 	}
 
-	if len(toggleDecks.OurDecks) != 3 {
-		t.Errorf("Not all decks were added.  Expected 3 but got %v\nThis might mean multiple decks were created with the same ID.", len(toggleDecks.OurDecks))
+	if len(app.TheDecks) != 3 {
+		t.Errorf("Not all decks were added.  Expected 3 but got %v\nThis might mean multiple decks were created with the same ID.", len(app.TheDecks))
 	}
 }

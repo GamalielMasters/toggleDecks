@@ -3,7 +3,7 @@ package tests
 import (
 	"reflect"
 	"testing"
-	"toggleDecks"
+	"github.com/GamalielMasters/toggleDecks"
 )
 
 func TestDefaultDeckIs52Cards(t *testing.T) {

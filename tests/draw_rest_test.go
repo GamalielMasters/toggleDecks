@@ -8,7 +8,7 @@ import (
 
 // Drawing from a deck returns just the cards as an array of card objects.  By default you get one card.
 func TestDrawOneCardFromADeck(t *testing.T) {
-	iid := createStandardDeck()
+	iid := app.NewDeck( "", false )
 	actual, status := DoRequest(t, "POST", fmt.Sprintf("/api/v1/decks/%v/draw", iid))
 
 	if status != http.StatusOK {
@@ -23,7 +23,7 @@ func TestDrawOneCardFromADeck(t *testing.T) {
 
 // You can draw more cards by specifying the number in the cards parameter to the request.
 func TestDrawThreeCardsFromADeck(t *testing.T) {
-	iid := createStandardDeck()
+	iid := app.NewDeck( "", false )
 	actual, status := DoRequest(t, "POST", fmt.Sprintf("/api/v1/decks/%v/draw?cards=3", iid))
 
 	if status != http.StatusOK {
@@ -38,7 +38,7 @@ func TestDrawThreeCardsFromADeck(t *testing.T) {
 
 // If you try to draw more cards then are left in the deck, you get whatever was left, not the number you asked for.
 func TestDrawTwoCardsFromADeckContainingOne(t *testing.T) {
-	iid := createCustomDeck("AS")
+	iid := app.NewDeck( "AS", false )
 	actual, status := DoRequest(t, "POST", fmt.Sprintf("/api/v1/decks/%v/draw?cards=2", iid))
 
 	if status != http.StatusOK {
@@ -53,7 +53,7 @@ func TestDrawTwoCardsFromADeckContainingOne(t *testing.T) {
 
 // Trying to draw from an exhausted deck gives you back an empty array... no cards at all.
 func TestDrawCardFromAnExhaustedDeck(t *testing.T) {
-	iid := createCustomDeck("AS QH")
+	iid := app.NewDeck( "AS QH", false )
 	_, status := DoRequest(t, "POST", fmt.Sprintf("/api/v1/decks/%v/draw?cards=2", iid))
 
 	if status != http.StatusOK {
@@ -74,7 +74,7 @@ func TestDrawCardFromAnExhaustedDeck(t *testing.T) {
 
 // If you provide anything but an integer for the number to draw, you get the default of one card.
 func TestDrawNaNCardsFromADeck(t *testing.T) {
-	iid := createStandardDeck()
+	iid := app.NewDeck( "", false )
 	actual, status := DoRequest(t, "POST", fmt.Sprintf("/api/v1/decks/%v/draw?cards=NaN", iid))
 
 	if status != http.StatusOK {

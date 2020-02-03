@@ -7,7 +7,8 @@ import (
 )
 
 func TestOpenADeck(t *testing.T) {
-	iid := createCustomDeck("AS KH 8C")
+	iid := app.NewDeck( "AS KH 8C", false )
+
 	actual, status := DoRequest(t, "GET", fmt.Sprintf("/api/v1/decks/%v", iid))
 
 	if status != http.StatusOK {
@@ -21,7 +22,7 @@ func TestOpenADeck(t *testing.T) {
 }
 
 func TestOpeNonExistentDeck(t *testing.T) {
-	createCustomDeck("AS KH 8C")
+	app.NewDeck("AS KH 8C", false )
 	_, status := DoRequest(t, "GET", "/api/v1/decks/f6d6ccf0-b740-459d-9e90-4b3869e1985c")
 
 	if status != http.StatusNotFound {

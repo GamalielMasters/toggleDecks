@@ -6,8 +6,14 @@ import (
 	"sort"
 	"strings"
 	"testing"
-	"toggleDecks"
+	"github.com/GamalielMasters/toggleDecks"
 )
+
+// The testing context router.
+var app *toggleDecks.App
+func init() {
+	app = toggleDecks.NewApp()
+}
 
 // Convert the deck into a string for comparison purposes.
 func DeckToSSortedString(d toggleDecks.Deck) string {
@@ -23,9 +29,9 @@ func SortDeckString(expected string) string {
 
 // Compare a deck to a string of deck codes to ensure that they contain the same cards, not necessarily in the same order.
 func DeckContainsCards(d toggleDecks.Deck, expected string) (bool, string, string) {
-	the_deck := DeckToSSortedString(d)
-	expected_deck := SortDeckString(expected)
-	return the_deck == expected_deck, expected_deck, the_deck
+	theDeck := DeckToSSortedString(d)
+	expectedDeck := SortDeckString(expected)
+	return theDeck == expectedDeck, expectedDeck, theDeck
 }
 
 // Mocking support for GUID deck identifiers
@@ -45,29 +51,10 @@ func UnPatchUID() {
 	toggleDecks.TheGuidProvider = toggleDecks.GuidIdProvider{}
 }
 
-// Empty the mock database.
-func ClearTheDatabase() {
-	toggleDecks.OurDecks = map[string]*toggleDecks.Deck{}
-}
-
-// Create a custom test deck and file it into the proper place to mock having added it through the api.
-func createCustomDeck(cards string) (iid string) {
-	iid = toggleDecks.TheGuidProvider.GenerateIdentifier()
-	deck := toggleDecks.CreateDeck(cards)
-	toggleDecks.OurDecks[iid] = &deck
-	return
-}
-
-func createStandardDeck() (iid string) {
-	iid = toggleDecks.TheGuidProvider.GenerateIdentifier()
-	deck := toggleDecks.CreateFullDeck()
-	toggleDecks.OurDecks[iid] = &deck
-	return
-}
 
 // Setup for creating a deck, and execute a deck creation request.
 func DoCreateRequest(t *testing.T, method string, url string) (body string, result int) {
-	ClearTheDatabase()
+	app.ClearTheDatabase()
 	PatchUID()
 	defer UnPatchUID()
 
@@ -81,9 +68,8 @@ func DoRequest(t *testing.T, method string, url string) (body string, result int
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	rr := httptest.NewRecorder()
-	toggleDecks.Router.ServeHTTP(rr, req)
+	app.Router.ServeHTTP(rr, req)
 	result = rr.Code
 
 	body = rr.Body.String()

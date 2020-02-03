@@ -2,7 +2,7 @@ package tests
 
 import (
 	"testing"
-	"toggleDecks"
+	"github.com/GamalielMasters/toggleDecks"
 )
 
 // Card Tests

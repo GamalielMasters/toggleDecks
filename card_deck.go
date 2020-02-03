@@ -66,7 +66,11 @@ func (d *Deck) String() string {
 		s += c.String() + " "
 	}
 
-	return s[:len(s)-1]
+	if len(s) > 0 {
+		return s[:len(s)-1]
+	} else {
+		return s
+	}
 }
 
 // Swaps two cards in the deck by index.  Required for shuffle.

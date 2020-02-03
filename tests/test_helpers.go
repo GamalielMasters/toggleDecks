@@ -47,14 +47,21 @@ func UnPatchUID() {
 
 // Empty the mock database.
 func ClearTheDatabase() {
-	toggleDecks.OurDecks = map[string]toggleDecks.Deck{}
+	toggleDecks.OurDecks = map[string]*toggleDecks.Deck{}
 }
 
 // Create a custom test deck and file it into the proper place to mock having added it through the api.
+func createCustomDeck(cards string) (iid string) {
+	iid = toggleDecks.TheGuidProvider.GenerateIdentifier()
+	deck := toggleDecks.CreateDeck(cards)
+	toggleDecks.OurDecks[iid] = &deck
+	return
+}
+
 func createStandardDeck() (iid string) {
-	ClearTheDatabase()
-	iid = "a251071b-662f-44b6-ba11-e24863039c59"
-	toggleDecks.OurDecks[iid] = toggleDecks.CreateDeck("AS KH 8C")
+	iid = toggleDecks.TheGuidProvider.GenerateIdentifier()
+	deck := toggleDecks.CreateFullDeck()
+	toggleDecks.OurDecks[iid] = &deck
 	return
 }
 

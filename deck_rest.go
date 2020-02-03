@@ -7,6 +7,7 @@ import (
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -26,44 +27,88 @@ var Router = mux.NewRouter()
 func init() {
 	Router.HandleFunc("/api/v1/decks", DeckCreateEndpoint).Methods("POST")
 	Router.HandleFunc("/api/v1/decks/{deckId}", DeckOpenEndpoint).Methods("GET")
+	Router.HandleFunc("/api/v1/decks/{deckId}/draw", DeckDrawEndpoint).Methods("POST")
 }
 
-// Provides an ID for our api objects
+// Interface to an ID provider for our api objects
 type RestIdProvider interface {
 	GenerateIdentifier() string
 }
 
+// The actual ID provider that returns random GUIDs
 type GuidIdProvider struct{}
 
+// Implement the RestIdProvider interface
 func (i GuidIdProvider) GenerateIdentifier() string {
 	return uuid.New().String()
 }
 
+// The actual IID generator hook used to grab an ID for a new deck.  This is so we can mock it in tests.
 var TheGuidProvider RestIdProvider = GuidIdProvider{}
 
-var OurDecks = map[string]Deck{}
+// A fake database of decks.
+var OurDecks = map[string]*Deck{}
 
-type RestMessage struct {
+// The object representing the deck information.  This is used both when we are and are not returning the cards in the deck.
+type RestDeckMessage struct {
 	Id        string     `json:"deck_id"`
-	Shuffled  bool       `json:"shuffled"`
-	Remaining int        `json:"remaining"`
+	Shuffled  *bool      `json:"shuffled"`
+	Remaining *int       `json:"remaining"`
 	Cards     []RestCard `json:"cards,omitempty"`
 }
 
+// The object representing the draw of a number of cards.
+type RestDrawMessage struct {
+	Cards []RestCard `json:"cards"`
+}
+
+// Structure for JSON serialization of a Card.
 type RestCard struct {
 	Value string `json:"value"`
 	Suite string `json:"suite"`
 	Code  string `json:"code"`
 }
 
-func RestCardFromCard(card Card) (restCard RestCard) {
-	restCard.Code = card.Code()
-	restCard.Suite = card.Suite()
-	restCard.Value = card.Rank()
-
-	return
+// Return an array of RestCard structs from an array of Card structs.  Translation for JSON serialization.
+func restCardsFromCards(cards []Card) []RestCard {
+	restCards := make([]RestCard, len(cards))
+	for i, c := range cards {
+		restCards[i] = RestCard{c.Rank(), c.Suite(), c.Code()}
+	}
+	return restCards
 }
 
+// Indicate success and write json data.
+func WriteSuccess(w http.ResponseWriter, rm interface{}) {
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	if e := json.NewEncoder(w).Encode(rm); e != nil {
+		_ = log.Output(1, "Error encoding data to json"+e.Error())
+	}
+}
+
+// Retrieve a stored deck from our "database" based on the request parameter named "deckId".  If it doesn't work, write
+// and error and return done=true.  Otherwise, return the IID and the deck* to the retrieved deck.
+func GetDeckFromRequest(w http.ResponseWriter, r *http.Request) (iid string, deck *Deck, done bool) {
+	pathParams := mux.Vars(r)
+
+	iid, ok := pathParams["deckId"]
+	if !ok {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = fmt.Fprint(w, "Deck ID Required")
+		return "", nil, true
+	}
+
+	deck, ok = OurDecks[iid]
+	if !ok {
+		w.WriteHeader(http.StatusNotFound)
+		_, _ = fmt.Fprintf(w, "ID %v is not a valid deck id.", iid)
+		return "", nil, true
+	}
+	return iid, deck, false
+}
+
+// REST Endpoint for Creating a new deck
 func DeckCreateEndpoint(w http.ResponseWriter, r *http.Request) {
 	iid := TheGuidProvider.GenerateIdentifier()
 
@@ -110,9 +155,10 @@ func DeckCreateEndpoint(w http.ResponseWriter, r *http.Request) {
 		deck.Shuffle()
 	}
 
-	OurDecks[iid] = deck
+	OurDecks[iid] = &deck
 
-	rm := RestMessage{iid, deck.Shuffled, deck.Len(), []RestCard{}}
+	remaining := deck.Len()
+	rm := RestDeckMessage{iid, &deck.Shuffled, &remaining, []RestCard{}}
 
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
@@ -121,33 +167,34 @@ func DeckCreateEndpoint(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// REST endpoint for opening (i.e. listing) a deck.
 func DeckOpenEndpoint(w http.ResponseWriter, r *http.Request) {
-	pathParams := mux.Vars(r)
-
-	iid, ok := pathParams["deckId"]
-	if !ok {
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = fmt.Fprint(w, "Deck ID Required")
+	iid, deck, done := GetDeckFromRequest(w, r)
+	if done {
 		return
 	}
 
-	deck, ok := OurDecks[iid]
-	if !ok {
-		w.WriteHeader(http.StatusNotFound)
-		_, _ = fmt.Fprintf(w, "ID %v is not a valid deck id.", iid)
+	numRemaining := deck.Len()
+	rm := RestDeckMessage{iid, &deck.Shuffled, &numRemaining, restCardsFromCards(deck.Cards)}
+
+	WriteSuccess(w, rm)
+}
+
+// REST endpoint for drawing cards from a deck.
+func DeckDrawEndpoint(w http.ResponseWriter, r *http.Request) {
+	_, deck, done := GetDeckFromRequest(w, r)
+	if done {
 		return
 	}
 
-	cards := make([]RestCard, deck.Len())
-	for i, c := range deck.Cards {
-		cards[i] = RestCardFromCard(c)
+	query := r.URL.Query()
+	count, err := strconv.Atoi(query.Get("cards"))
+
+	if err != nil {
+		count = 1
 	}
 
-	rm := RestMessage{iid, deck.Shuffled, deck.Len(), cards}
+	rm := RestDrawMessage{restCardsFromCards(deck.Draw(count))}
 
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/json")
-	if e := json.NewEncoder(w).Encode(rm); e != nil {
-		_ = log.Output(1, "Error encoding data to json"+e.Error())
-	}
+	WriteSuccess(w, rm)
 }

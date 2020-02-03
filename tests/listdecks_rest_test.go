@@ -9,16 +9,7 @@ import (
 // When you visit the endpoint for decks with a get request, you get a list of all the decks in the system.
 func TestListDeck(t *testing.T) {
 	app.ClearTheDatabase()
-	iids := make([]string, 3)
-	for i := 0; i < 3; i++ {
-		app.NewDeck("", true)
-	}
-
-	x := 0
-	for i, _ := range app.TheDecks {
-		iids[x] = i
-		x++
-	}
+	id := app.NewDeck("", true)
 
 	actual, status := DoRequest(t, "GET", "/api/v1/decks")
 
@@ -26,7 +17,7 @@ func TestListDeck(t *testing.T) {
 		t.Errorf("Recived wrong status code. Expected %v, got %v.", http.StatusOK, status)
 	}
 
-	expected := fmt.Sprintf(`{"decks":[{"deck_id":"%v"},{"deck_id":"%v"},{"deck_id":"%v"}]}`+"\n", iids[0], iids[1], iids[2])
+	expected := fmt.Sprintf(`{"decks":[{"deck_id":"%v"}]}`+"\n", id)
 	if expected != actual {
 		t.Errorf("Wrong result returned.\n\tExpected : %v\n\tGot      : %v", expected, actual)
 	}

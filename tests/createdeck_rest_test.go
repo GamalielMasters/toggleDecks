@@ -26,7 +26,7 @@ func ClearTheDatabase() {
 	toggleDecks.OurDecks = map[string]toggleDecks.Deck{}
 }
 
-func DoRequest(t *testing.T, method string, url string) (body string, result int) {
+func DoCreateRequest(t *testing.T, method string, url string) (body string, result int) {
 	ClearTheDatabase()
 	PatchUID()
 	defer UnPatchUID()
@@ -38,8 +38,7 @@ func DoRequest(t *testing.T, method string, url string) (body string, result int
 	}
 
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(toggleDecks.DeckCreateEndpoint)
-	handler.ServeHTTP(rr, req)
+	toggleDecks.Router.ServeHTTP(rr, req)
 	result = rr.Code
 
 	body = rr.Body.String()
@@ -47,7 +46,7 @@ func DoRequest(t *testing.T, method string, url string) (body string, result int
 }
 
 func TestCreateNewDefaultDeck(t *testing.T) {
-	actual, status := DoRequest(t, "POST", "/api/v1/decks")
+	actual, status := DoCreateRequest(t, "POST", "/api/v1/decks")
 
 	if status != http.StatusOK {
 		t.Errorf("Recived wrong status code. Expected %v, got %v.", http.StatusOK, status)
@@ -64,7 +63,7 @@ func TestCreateNewDefaultDeck(t *testing.T) {
 }
 
 func TestCreateNewShuffledDeck(t *testing.T) {
-	actual, status := DoRequest(t, "POST", "/api/v1/decks?shuffle=true")
+	actual, status := DoCreateRequest(t, "POST", "/api/v1/decks?shuffle=true")
 
 	if status != http.StatusOK {
 		t.Errorf("Recived wrong status code. Expected %v, got %v.", http.StatusOK, status)
@@ -78,7 +77,7 @@ func TestCreateNewShuffledDeck(t *testing.T) {
 }
 
 func TestCreateNewCustomDeck(t *testing.T) {
-	actual, status := DoRequest(t, "POST", "/api/v1/decks?cards=AS,KD,AC,2C,KH")
+	actual, status := DoCreateRequest(t, "POST", "/api/v1/decks?cards=AS,KD,AC,2C,KH")
 
 	if status != http.StatusOK {
 		t.Errorf("Recived wrong status code. Expected %v, got %v.", http.StatusOK, status)
@@ -100,7 +99,7 @@ func TestCreateNewCustomDeck(t *testing.T) {
 }
 
 func TestCreateNewCustomShuffledDeck(t *testing.T) {
-	actual, status := DoRequest(t, "POST", "/api/v1/decks?cards=AS,KD,AC,2C,KH&shuffle=true")
+	actual, status := DoCreateRequest(t, "POST", "/api/v1/decks?cards=AS,KD,AC,2C,KH&shuffle=true")
 
 	if status != http.StatusOK {
 		t.Errorf("Recived wrong status code. Expected %v, got %v.", http.StatusOK, status)
@@ -126,7 +125,7 @@ func TestCreateNewCustomShuffledDeck(t *testing.T) {
 }
 
 func TestCreateCustomDeckWithRepeatedCardsOk(t *testing.T) {
-	actual, status := DoRequest(t, "POST", "/api/v1/decks?cards=AS,KD,AC,2C,KH,AS,KD,AC,2C,KH&shuffle=false")
+	actual, status := DoCreateRequest(t, "POST", "/api/v1/decks?cards=AS,KD,AC,2C,KH,AS,KD,AC,2C,KH&shuffle=false")
 
 	if status != http.StatusOK {
 		t.Errorf("Recived wrong status code. Expected %v, got %v.", http.StatusOK, status)
@@ -149,14 +148,14 @@ func TestCreateCustomDeckWithRepeatedCardsOk(t *testing.T) {
 
 func TestCreateCustomDeckWithInvalidCards(t *testing.T) {
 	// Wrong Rank - 11 of Dimonds is not a legal card.
-	_, status := DoRequest(t, "POST", "/api/v1/decks?cards=AS,KD,AC,2C, 11D")
+	_, status := DoCreateRequest(t, "POST", "/api/v1/decks?cards=AS,KD,AC,2C, 11D")
 
 	if status != http.StatusBadRequest {
 		t.Errorf("Did not respond with proper error to bad card rank.  Expected %v but got %v", http.StatusBadRequest, status)
 	}
 
 	//Invalid Suite - There is no suite "B"
-	_, status = DoRequest(t, "POST", "/api/v1/decks?cards=AS,KD,AC,2C,9B")
+	_, status = DoCreateRequest(t, "POST", "/api/v1/decks?cards=AS,KD,AC,2C,9B")
 
 	if status != http.StatusBadRequest {
 		t.Errorf("Did not respond with proper error to bad card suite.  Expected %v but got %v", http.StatusBadRequest, status)
@@ -164,7 +163,7 @@ func TestCreateCustomDeckWithInvalidCards(t *testing.T) {
 }
 
 func TestMultipleDecksGetDifferentIds(t *testing.T) {
-	// Cannot use DoRequest here because it installs the GUID mock.
+	// Cannot use DoCreateRequest here because it installs the GUID mock.
 	ClearTheDatabase()
 	req, err := http.NewRequest("POST", "/api/v1/decks", nil)
 

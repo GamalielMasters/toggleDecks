@@ -3,11 +3,19 @@ package toggleDecks
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
-
 	"github.com/google/uuid"
+	"github.com/gorilla/mux"
+	"log"
 	"net/http"
+	"strings"
 )
+
+var Router = mux.NewRouter()
+
+func init() {
+	Router.HandleFunc("/api/v1/decks", DeckCreateEndpoint).Methods("POST")
+	Router.HandleFunc("/api/v1/decks/{deckId}", DeckOpenEndpoint).Methods("GET")
+}
 
 // Provides an ID for our api objects
 type RestIdProvider interface {
@@ -25,10 +33,24 @@ var TheGuidProvider RestIdProvider = GuidIdProvider{}
 var OurDecks = map[string]Deck{}
 
 type RestMessage struct {
-	Id        string `json:"deck_id"`
-	Shuffled  bool   `json:"shuffled"`
-	Remaining int    `json:"remaining"`
-	Cards     []Card `json:"cards,omitempty"`
+	Id        string     `json:"deck_id"`
+	Shuffled  bool       `json:"shuffled"`
+	Remaining int        `json:"remaining"`
+	Cards     []RestCard `json:"cards,omitempty"`
+}
+
+type RestCard struct {
+	Value string `json:"value"`
+	Suite string `json:"suite"`
+	Code  string `json:"code"`
+}
+
+func RestCardFromCard(card Card) (restCard RestCard) {
+	restCard.Code = card.Code()
+	restCard.Suite = card.Suite()
+	restCard.Value = card.Rank()
+
+	return
 }
 
 func DeckCreateEndpoint(w http.ResponseWriter, r *http.Request) {
@@ -79,9 +101,42 @@ func DeckCreateEndpoint(w http.ResponseWriter, r *http.Request) {
 
 	OurDecks[iid] = deck
 
-	rm := RestMessage{iid, deck.Shuffled, deck.Len(), []Card{}}
+	rm := RestMessage{iid, deck.Shuffled, deck.Len(), []RestCard{}}
 
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(rm)
+	if e := json.NewEncoder(w).Encode(rm); e != nil {
+		_ = log.Output(1, "Error encoding data to json"+e.Error())
+	}
+}
+
+func DeckOpenEndpoint(w http.ResponseWriter, r *http.Request) {
+	pathParams := mux.Vars(r)
+
+	iid, ok := pathParams["deckId"]
+	if !ok {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = fmt.Fprint(w, "Deck ID Required")
+		return
+	}
+
+	deck, ok := OurDecks[iid]
+	if !ok {
+		w.WriteHeader(http.StatusNotFound)
+		_, _ = fmt.Fprintf(w, "ID %v is not a valid deck id.", iid)
+		return
+	}
+
+	cards := make([]RestCard, deck.Len())
+	for i, c := range deck.Cards {
+		cards[i] = RestCardFromCard(c)
+	}
+
+	rm := RestMessage{iid, deck.Shuffled, deck.Len(), cards}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	if e := json.NewEncoder(w).Encode(rm); e != nil {
+		_ = log.Output(1, "Error encoding data to json"+e.Error())
+	}
 }

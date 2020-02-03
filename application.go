@@ -31,6 +31,7 @@ type App struct {
 func NewApp() *App {
 	a := App{mux.NewRouter(), map[string]*Deck{}}
 	a.Router.HandleFunc("/api/v1/decks", a.DeckCreateEndpoint).Methods("POST")
+	a.Router.HandleFunc("/api/v1/decks", a.DeckListEndpoint).Methods("GET")
 	a.Router.HandleFunc("/api/v1/decks/{deckId}", a.DeckOpenEndpoint).Methods("GET")
 	a.Router.HandleFunc("/api/v1/decks/{deckId}/draw", a.DeckDrawEndpoint).Methods("POST")
 
@@ -161,4 +162,18 @@ func (a *App) DeckDrawEndpoint(w http.ResponseWriter, r *http.Request) {
 	}
 
 	WriteSuccess(w, NewRestDrawMessage(deck.Draw(count)))
+}
+
+// REST endpoint for listing open decks
+func (a *App) DeckListEndpoint(w http.ResponseWriter, r *http.Request) {
+	allTheIds := make([]RestDeckMessage, len(a.TheDecks))
+	x := 0
+	for id, _ := range a.TheDecks {
+		allTheIds[x] = RestDeckMessage{id, nil, nil, []RestCard{}}
+		x++
+	}
+
+	message := ListDeckMessage{Decks: allTheIds}
+
+	WriteSuccess(w, message)
 }

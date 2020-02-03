@@ -28,11 +28,16 @@ func (i GuidIdProvider) GenerateIdentifier() string {
 // The actual IID generator hook used to grab an ID for a new deck.  This is so we can mock it in tests.
 var TheGuidProvider RestIdProvider = GuidIdProvider{}
 
+// The object used to list decks.
+type ListDeckMessage struct {
+	Decks []RestDeckMessage `json:"decks"`
+}
+
 // The object representing the deck information.  This is used both when we are and are not returning the cards in the deck.
 type RestDeckMessage struct {
 	Id        string     `json:"deck_id"`
-	Shuffled  *bool      `json:"shuffled"`
-	Remaining *int       `json:"remaining"`
+	Shuffled  *bool      `json:"shuffled,omitempty"`
+	Remaining *int       `json:"remaining,omitempty"`
 	Cards     []RestCard `json:"cards,omitempty"`
 }
 

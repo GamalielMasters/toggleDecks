@@ -1,16 +1,17 @@
 package tests
 
 import (
+	"github.com/GamalielMasters/toggleDecks"
 	"net/http"
 	"net/http/httptest"
 	"sort"
 	"strings"
 	"testing"
-	"github.com/GamalielMasters/toggleDecks"
 )
 
 // The testing context router.
 var app *toggleDecks.App
+
 func init() {
 	app = toggleDecks.NewApp()
 }
@@ -50,7 +51,6 @@ func PatchUID() {
 func UnPatchUID() {
 	toggleDecks.TheGuidProvider = toggleDecks.GuidIdProvider{}
 }
-
 
 // Setup for creating a deck, and execute a deck creation request.
 func DoCreateRequest(t *testing.T, method string, url string) (body string, result int) {
